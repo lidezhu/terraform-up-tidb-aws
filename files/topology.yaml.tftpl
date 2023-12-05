@@ -24,6 +24,11 @@ tiflash_servers:
   - host: ${host}
   %{~ endfor ~}
 
+ticdc_servers:
+  %{~ for host in ticdc_hosts ~}
+  - host: ${host}
+  %{~ endfor ~}
+
 pd_servers:
   - host: 172.31.8.1
 

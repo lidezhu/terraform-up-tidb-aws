@@ -22,6 +22,10 @@ output "private-ip-tiflash" {
   value = aws_instance.tiflash.*.private_ip
 }
 
+output "private-ip-ticdc" {
+  value = aws_instance.ticdc.*.private_ip
+}
+
 output "private-ip-pd" {
   value = aws_instance.pd.*.private_ip
 }
