@@ -38,6 +38,13 @@ resource "aws_eip" "pd" {
   associate_with_private_ip = "172.31.8.1"
 }
 
+resource "aws_eip" "pd-downstream" {
+  vpc                       = true
+  depends_on                = [ aws_internet_gateway.main ]
+  network_interface         = aws_network_interface.pd-downstream.id
+  associate_with_private_ip = "172.31.18.1"
+}
+
 resource "aws_security_group" "ssh" {
   ingress {
     from_port   = 22
