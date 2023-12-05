@@ -35,7 +35,7 @@ resource "aws_instance" "tidb" {
   ami                         = local.image
   instance_type               = local.tidb_instance
   key_name                    = aws_key_pair.master_key.id
-  vpc_security_group_ids      = [aws_security_group.ssh.id]
+  vpc_security_group_ids      = [aws_security_group.ssh.id, aws_security_group.mysql.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
@@ -68,15 +68,22 @@ resource "aws_instance" "tidb" {
   }
 }
 
+resource "aws_network_interface" "pd" {
+  subnet_id       = aws_subnet.main.id
+  private_ips     = ["172.31.8.1"]
+  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id]
+}
+
 resource "aws_instance" "pd" {
   ami                         = local.image
   instance_type               = local.pd_instance
   key_name                    = aws_key_pair.master_key.id
-  vpc_security_group_ids      = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
-  subnet_id                   = aws_subnet.main.id
-  associate_public_ip_address = true
-  private_ip                  = "172.31.8.1"
+
+  network_interface {
+    network_interface_id = aws_network_interface.pd.id
+    device_index         = 0
+  }
 
   root_block_device {
     volume_size           = 100
@@ -94,7 +101,7 @@ resource "aws_instance" "pd" {
     type        = "ssh"
     user        = "ubuntu"
     private_key = file(local.master_ssh_key)
-    host        = self.public_ip
+    host        = aws_eip.pd.public_ip
   }
 
   provisioner "remote-exec" {
@@ -222,15 +229,22 @@ resource "aws_instance" "ticdc" {
   }
 }
 
+resource "aws_network_interface" "center" {
+  subnet_id       = aws_subnet.main.id
+  private_ips     = ["172.31.1.1"]
+  security_groups = [aws_security_group.ssh.id]
+}
+
 resource "aws_instance" "center" {
   ami                         = local.image
   instance_type               = local.center_instance
   key_name                    = aws_key_pair.master_key.id
-  vpc_security_group_ids      = [aws_security_group.ssh.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
-  subnet_id                   = aws_subnet.main.id
-  associate_public_ip_address = true
-  private_ip                  = "172.31.1.1"
+
+  network_interface {
+    network_interface_id = aws_network_interface.center.id
+    device_index         = 0
+  }
 
   root_block_device {
     volume_size           = 200
@@ -248,7 +262,7 @@ resource "aws_instance" "center" {
     type        = "ssh"
     user        = "ubuntu"
     private_key = file(local.master_ssh_key)
-    host        = self.public_ip
+    host        = aws_eip.center.public_ip
   }
 
   provisioner "file" {

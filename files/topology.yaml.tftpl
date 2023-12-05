@@ -24,7 +24,7 @@ tiflash_servers:
   - host: ${host}
   %{~ endfor ~}
 
-ticdc_servers:
+cdc_servers:
   %{~ for host in ticdc_hosts ~}
   - host: ${host}
   %{~ endfor ~}
