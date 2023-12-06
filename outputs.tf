@@ -30,11 +30,11 @@ output "private-ip-pd" {
   value = aws_instance.pd.*.private_ip
 }
 
-output "url-tidb-downstream-dashboard" {
+output "url-tidb-dashboard-downstream" {
   value = "http://${aws_instance.pd-downstream.public_ip}:2379/dashboard"
 }
 
-output "url-downstream-grafana" {
+output "url-grafana-downstream" {
   value = "http://${aws_instance.pd-downstream.public_ip}:3000"
 }
 
