@@ -7,10 +7,10 @@ locals {
 
   # If you want to change instance type, ensure that GP3 EBS is available in the instance type.
   tidb_instance    = "c5.4xlarge"
-  tikv_instance    = "r5.2xlarge"
-  pd_instance      = "c5.2xlarge"
-  tiflash_instance = "r5.2xlarge"
-  ticdc_instance   = "c5.4xlarge"
+  tikv_instance    = "r5.4xlarge"
+  pd_instance      = "c5.4xlarge"
+  tiflash_instance = "c5.9xlarge"
+  ticdc_instance   = "c5a.16xlarge"
   center_instance  = "c5.2xlarge"
 
   master_ssh_key         = "./master_key"

@@ -96,3 +96,13 @@ resource "aws_security_group" "mysql" {
   }
   vpc_id = aws_vpc.main.id
 }
+
+resource "aws_security_group" "prometheus" {
+  ingress {
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  vpc_id = aws_vpc.main.id
+}

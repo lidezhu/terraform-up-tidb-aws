@@ -71,7 +71,7 @@ resource "aws_instance" "tidb" {
 resource "aws_network_interface" "pd" {
   subnet_id       = aws_subnet.main.id
   private_ips     = ["172.31.8.1"]
-  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id]
+  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id, aws_security_group.prometheus.id]
 }
 
 resource "aws_instance" "pd" {
@@ -193,7 +193,7 @@ resource "aws_instance" "tidb-downstream" {
 resource "aws_network_interface" "pd-downstream" {
   subnet_id       = aws_subnet.main.id
   private_ips     = ["172.31.18.1"]
-  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id]
+  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id, aws_security_group.prometheus.id]
 }
 
 resource "aws_instance" "pd-downstream" {
@@ -325,7 +325,7 @@ resource "aws_instance" "ticdc" {
   private_ip                  = "172.31.10.${count.index + 1}"
 
   root_block_device {
-    volume_size           = 200
+    volume_size           = 2048
     delete_on_termination = true
     volume_type           = "gp3"
     iops                  = 4000
