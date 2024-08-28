@@ -128,8 +128,8 @@ resource "aws_instance" "tikv" {
     volume_size           = 500
     delete_on_termination = true
     volume_type           = "gp3"
-    iops                  = 4000
-    throughput            = 288
+    iops                  = 6000
+    throughput            = 600
   }
 
   tags = {
@@ -155,7 +155,7 @@ resource "aws_instance" "tidb-downstream" {
   count = local.n_tidb_downstream
 
   ami                         = local.image
-  instance_type               = local.tidb_instance
+  instance_type               = local.tidb_downstream_instance
   key_name                    = aws_key_pair.master_key.id
   vpc_security_group_ids      = [aws_security_group.ssh.id, aws_security_group.mysql.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
@@ -250,8 +250,8 @@ resource "aws_instance" "tikv-downstream" {
     volume_size           = 500
     delete_on_termination = true
     volume_type           = "gp3"
-    iops                  = 4000
-    throughput            = 288
+    iops                  = 6000
+    throughput            = 600
   }
 
   tags = {

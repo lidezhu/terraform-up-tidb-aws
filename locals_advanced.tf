@@ -10,8 +10,11 @@ locals {
   tikv_instance    = "r5.4xlarge"
   pd_instance      = "c5.4xlarge"
   tiflash_instance = "c5.9xlarge"
-  ticdc_instance   = "c5a.16xlarge"
+  ticdc_instance   = "c5.12xlarge"
   center_instance  = "c5.2xlarge"
+
+  # TODO: deploy a load balancer for downstream
+  tidb_downstream_instance    = "c5a.16xlarge"
 
   master_ssh_key         = "./master_key"
   master_ssh_public      = "./master_key.pub"
