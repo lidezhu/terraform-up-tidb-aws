@@ -38,13 +38,6 @@ resource "aws_eip" "pd" {
   associate_with_private_ip = "172.31.8.1"
 }
 
-resource "aws_eip" "pd-downstream" {
-  vpc                       = true
-  depends_on                = [ aws_internet_gateway.main ]
-  network_interface         = aws_network_interface.pd-downstream.id
-  associate_with_private_ip = "172.31.18.1"
-}
-
 resource "aws_security_group" "ssh" {
   ingress {
     from_port   = 22
@@ -81,26 +74,6 @@ resource "aws_security_group" "grafana" {
   ingress {
     from_port   = 3000
     to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  vpc_id = aws_vpc.main.id
-}
-
-resource "aws_security_group" "mysql" {
-  ingress {
-    from_port   = 4000
-    to_port     = 4000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  vpc_id = aws_vpc.main.id
-}
-
-resource "aws_security_group" "prometheus" {
-  ingress {
-    from_port   = 9090
-    to_port     = 9090
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

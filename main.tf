@@ -35,7 +35,7 @@ resource "aws_instance" "tidb" {
   ami                         = local.image
   instance_type               = local.tidb_instance
   key_name                    = aws_key_pair.master_key.id
-  vpc_security_group_ids      = [aws_security_group.ssh.id, aws_security_group.mysql.id]
+  vpc_security_group_ids      = [aws_security_group.ssh.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
@@ -71,7 +71,7 @@ resource "aws_instance" "tidb" {
 resource "aws_network_interface" "pd" {
   subnet_id       = aws_subnet.main.id
   private_ips     = ["172.31.8.1"]
-  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id, aws_security_group.prometheus.id]
+  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id]
 }
 
 resource "aws_instance" "pd" {
@@ -157,7 +157,7 @@ resource "aws_instance" "tidb-downstream" {
   ami                         = local.image
   instance_type               = local.tidb_downstream_instance
   key_name                    = aws_key_pair.master_key.id
-  vpc_security_group_ids      = [aws_security_group.ssh.id, aws_security_group.mysql.id]
+  vpc_security_group_ids      = [aws_security_group.ssh.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
@@ -180,50 +180,6 @@ resource "aws_instance" "tidb-downstream" {
     user        = "ubuntu"
     private_key = file(local.master_ssh_key)
     host        = self.public_ip
-  }
-
-  provisioner "remote-exec" {
-    inline = local.provisioner_add_alternative_ssh_public
-  }
-  provisioner "remote-exec" {
-    script = "./files/bootstrap_all.sh"
-  }
-}
-
-resource "aws_network_interface" "pd-downstream" {
-  subnet_id       = aws_subnet.main.id
-  private_ips     = ["172.31.18.1"]
-  security_groups = [aws_security_group.ssh.id, aws_security_group.etcd.id, aws_security_group.grafana.id, aws_security_group.prometheus.id]
-}
-
-resource "aws_instance" "pd-downstream" {
-  ami                         = local.image
-  instance_type               = local.pd_instance
-  key_name                    = aws_key_pair.master_key.id
-  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
-
-  network_interface {
-    network_interface_id = aws_network_interface.pd-downstream.id
-    device_index         = 0
-  }
-
-  root_block_device {
-    volume_size           = 100
-    delete_on_termination = true
-    volume_type           = "gp3"
-    iops                  = 4000
-    throughput            = 288
-  }
-
-  tags = {
-    Name = "${local.name}-pd-downstream-1"
-  }
-
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = file(local.master_ssh_key)
-    host        = aws_eip.pd-downstream.public_ip
   }
 
   provisioner "remote-exec" {

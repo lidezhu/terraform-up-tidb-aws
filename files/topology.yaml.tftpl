@@ -5,8 +5,11 @@ global:
 
 server_configs:
   tidb: {}
-  tikv: {}
-  pd: {}
+  tikv:
+    cdc.min-ts-interval: 200ms
+    storage.block-cache.capacity: "16GB"
+  pd:
+    schedule.enable-cross-table-merge: false
   tiflash: {}
 
 tidb_servers:

@@ -30,13 +30,13 @@ output "private-ip-pd" {
   value = aws_instance.pd.*.private_ip
 }
 
-output "url-tidb-dashboard-downstream" {
-  value = "http://${aws_instance.pd-downstream.public_ip}:2379/dashboard"
-}
+#output "url-tidb-dashboard-downstream" {
+#  value = "http://${aws_instance.pd-downstream.public_ip}:2379/dashboard"
+#}
 
-output "url-grafana-downstream" {
-  value = "http://${aws_instance.pd-downstream.public_ip}:3000"
-}
+#output "url-grafana-downstream" {
+#  value = "http://${aws_instance.pd-downstream.public_ip}:3000"
+#}
 
 output "private-ip-tidb-downstream" {
   value = aws_instance.tidb-downstream.*.private_ip
@@ -46,6 +46,3 @@ output "private-ip-tikv-downstream" {
   value = aws_instance.tikv-downstream.*.private_ip
 }
 
-output "private-ip-pd-downstream" {
-  value = aws_instance.pd-downstream.*.private_ip
-}
