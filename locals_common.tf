@@ -1,8 +1,8 @@
 locals {
-  name      = "ldz-test"
-  n_tidb    = 3
-  n_tikv    = 3
-  n_ticdc   = 1
+  name      = "cdc-test"
+  n_tidb    = 5
+  n_tikv    = 12
+  n_ticdc   = 2
   n_tiflash = 0
 
   n_tidb_downstream = 0

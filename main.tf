@@ -284,8 +284,8 @@ resource "aws_instance" "ticdc" {
     volume_size           = 2048
     delete_on_termination = true
     volume_type           = "gp3"
-    iops                  = 4000
-    throughput            = 288
+    iops                  = 6000
+    throughput            = 1000
   }
 
   tags = {
