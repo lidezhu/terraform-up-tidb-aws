@@ -86,7 +86,7 @@ resource "aws_instance" "pd" {
   }
 
   root_block_device {
-    volume_size           = 100
+    volume_size           = 500
     delete_on_termination = true
     volume_type           = "gp3"
     iops                  = 4000
