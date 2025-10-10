@@ -6,8 +6,10 @@ global:
 server_configs:
   tidb: {}
   tikv:
-    cdc.min-ts-interval: 200ms
+    cdc.min-ts-interval: 1s
     storage.block-cache.capacity: "16GB"
+    rocksdb.titan.enabled: true
+    rocksdb.defaultcf.titan.min-blob-size: "1KB"
   pd:
     schedule.enable-cross-table-merge: false
   tiflash: {}
