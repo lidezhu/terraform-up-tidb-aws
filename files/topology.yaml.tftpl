@@ -13,6 +13,8 @@ server_configs:
   pd:
     schedule.enable-cross-table-merge: false
   tiflash: {}
+  cdc:
+    newarch: true
 
 tidb_servers:
   %{~ for host in tidb_hosts ~}
