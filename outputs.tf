@@ -26,6 +26,10 @@ output "private-ip-ticdc" {
   value = aws_instance.ticdc.*.private_ip
 }
 
+output "private-ip-ticdc-local" {
+  value = aws_instance.ticdc_local.*.private_ip
+}
+
 output "private-ip-pd" {
   value = aws_instance.pd.*.private_ip
 }

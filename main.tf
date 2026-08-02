@@ -307,6 +307,52 @@ resource "aws_instance" "ticdc" {
   }
 }
 
+resource "aws_instance" "ticdc_local" {
+  count = local.n_ticdc_local
+
+  ami                         = local.image
+  instance_type               = local.ticdc_local_instance
+  key_name                    = aws_key_pair.master_key.id
+  vpc_security_group_ids      = [aws_security_group.ssh.id]
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
+  subnet_id                   = aws_subnet.main.id
+  associate_public_ip_address = true
+  private_ip                  = "172.31.11.${count.index + 1}"
+
+  root_block_device {
+    volume_size           = 50
+    delete_on_termination = true
+    volume_type           = "gp3"
+  }
+
+  # The mapping is explicit so changes involving the instance store recreate the instance.
+  ephemeral_block_device {
+    device_name  = "/dev/sdb"
+    virtual_name = "ephemeral0"
+  }
+
+  tags = {
+    Name = "${local.name}-ticdc-local-${count.index}"
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local.master_ssh_key)
+    host        = self.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = local.provisioner_add_alternative_ssh_public
+  }
+  provisioner "remote-exec" {
+    script = "./files/bootstrap_all.sh"
+  }
+  provisioner "remote-exec" {
+    script = "./files/bootstrap_ticdc_local_disk.sh"
+  }
+}
+
 resource "aws_network_interface" "center" {
   subnet_id       = aws_subnet.main.id
   private_ips     = ["172.31.1.1"]
@@ -392,5 +438,32 @@ resource "aws_instance" "center" {
 
   provisioner "remote-exec" {
     script = "./files/bootstrap_center.sh"
+  }
+}
+
+resource "terraform_data" "topology_local" {
+  triggers_replace = concat(
+    [aws_instance.center.id],
+    aws_instance.tidb.*.id,
+    aws_instance.tikv.*.id,
+    aws_instance.tiflash.*.id,
+    aws_instance.ticdc_local.*.id,
+  )
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local.master_ssh_key)
+    host        = aws_eip.center.public_ip
+  }
+
+  provisioner "file" {
+    content = templatefile("./files/topology_local.yaml.tftpl", {
+      tidb_hosts        = aws_instance.tidb.*.private_ip,
+      tikv_hosts        = aws_instance.tikv.*.private_ip,
+      tiflash_hosts     = aws_instance.tiflash.*.private_ip,
+      ticdc_local_hosts = aws_instance.ticdc_local.*.private_ip,
+    })
+    destination = "/home/ubuntu/topology_local.yaml"
   }
 }

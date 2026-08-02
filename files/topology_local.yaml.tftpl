@@ -1,0 +1,45 @@
+global:
+  user: "tidb"
+  ssh_port: 22
+  deploy_dir: "/tidb-deploy"
+
+server_configs:
+  tidb: {}
+  tikv:
+    cdc.min-ts-interval: 1s
+    storage.block-cache.capacity: "16GB"
+    rocksdb.titan.enabled: true
+    rocksdb.defaultcf.titan.min-blob-size: "1KB"
+  pd:
+    schedule.enable-cross-table-merge: false
+  tiflash: {}
+
+tidb_servers:
+  %{~ for host in tidb_hosts ~}
+  - host: ${host}
+  %{~ endfor ~}
+
+tikv_servers:
+  %{~ for host in tikv_hosts ~}
+  - host: ${host}
+  %{~ endfor ~}
+
+tiflash_servers:
+  %{~ for host in tiflash_hosts ~}
+  - host: ${host}
+  %{~ endfor ~}
+
+cdc_servers:
+  %{~ for host in ticdc_local_hosts ~}
+  - host: ${host}
+    data_dir: /mnt/ticdc/data
+  %{~ endfor ~}
+
+pd_servers:
+  - host: 172.31.8.1
+
+monitoring_servers:
+  - host: 172.31.8.1
+
+grafana_servers:
+  - host: 172.31.8.1
