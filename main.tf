@@ -467,3 +467,22 @@ resource "terraform_data" "topology_local" {
     destination = "/home/ubuntu/topology_local.yaml"
   }
 }
+
+resource "terraform_data" "small_downstream_topology" {
+  triggers_replace = [
+    aws_instance.center.id,
+    filesha256("./files/topology-small-downstream.yaml"),
+  ]
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local.master_ssh_key)
+    host        = aws_eip.center.public_ip
+  }
+
+  provisioner "file" {
+    source      = "./files/topology-small-downstream.yaml"
+    destination = "/home/ubuntu/topology-small-downstream.yaml"
+  }
+}

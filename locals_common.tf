@@ -1,8 +1,8 @@
 locals {
   name      = "ldz-test"
   n_tidb    = 3
-  n_tikv    = 12
-  n_ticdc   = 6
+  n_tikv    = 8
+  n_ticdc   = 3
   n_ticdc_local = 0
   n_tiflash = 0
 

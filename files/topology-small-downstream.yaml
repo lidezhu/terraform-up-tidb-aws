@@ -1,0 +1,17 @@
+global:
+  user: "tidb"
+  ssh_port: 22
+  deploy_dir: "/tidb-deploy-downstream-small"
+  data_dir: "/tidb-data-downstream-small"
+
+server_configs: {}
+
+pd_servers:
+  - host: 172.31.1.1
+
+tikv_servers:
+  - host: 172.31.1.1
+
+tidb_servers:
+  - host: 172.31.1.1
+    port: 4001

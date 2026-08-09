@@ -8,8 +8,14 @@ server_configs:
   tikv:
     cdc.min-ts-interval: 1s
     storage.block-cache.capacity: "16GB"
-    rocksdb.titan.enabled: true
+    rocksdb.titan.enabled: false
     rocksdb.defaultcf.titan.min-blob-size: "1KB"
+    raftstore.snap-generator-pool-size: 4
+    server.snap-io-max-bytes-per-sec: 400MiB
+    coprocessor.region-split-size: 96MiB
+    coprocessor.region-max-size: 144MiB
+    coprocessor.region-split-keys: 960000
+    coprocessor.region-max-keys: 1440000
   pd:
     schedule.enable-cross-table-merge: false
   tiflash: {}
