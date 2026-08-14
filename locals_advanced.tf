@@ -7,10 +7,10 @@ locals {
 
   # If you want to change instance type, ensure that GP3 EBS is available in the instance type.
   tidb_instance    = "c5.4xlarge"
-  tikv_instance    = "r5.4xlarge"
+  tikv_instance    = "r5.2xlarge"
   pd_instance      = "c5.4xlarge"
   tiflash_instance = "c5.9xlarge"
-  ticdc_instance   = "c5.4xlarge"
+  ticdc_instance   = "c6in.4xlarge"
   ticdc_local_instance = "i4i.2xlarge" # 8 vCPU, 64 GiB memory, one 1,875 GB local NVMe SSD
   center_instance  = "c5.2xlarge"
 

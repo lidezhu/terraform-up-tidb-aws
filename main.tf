@@ -281,7 +281,7 @@ resource "aws_instance" "ticdc" {
   private_ip                  = "172.31.10.${count.index + 1}"
 
   root_block_device {
-    volume_size           = 2048
+    volume_size           = 1024
     delete_on_termination = true
     volume_type           = "gp3"
     iops                  = 6000
