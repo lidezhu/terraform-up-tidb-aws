@@ -50,3 +50,10 @@ output "private-ip-tikv-downstream" {
   value = aws_instance.tikv-downstream.*.private_ip
 }
 
+output "common-availability-zones" {
+  value = local.common_availability_zones
+}
+
+output "selected-availability-zone" {
+  value = local.selected_availability_zone
+}
