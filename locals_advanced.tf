@@ -1,9 +1,9 @@
 # Changes to these locals are easy to break something. Ensure you know what you are doing (see each comment).
 
 locals {
-  # image is region-local. If you changed region, please also change image.
-  region = "us-east-1"
-  image  = "ami-0ecb62995f68bb549"  # Ubuntu 24.04
+  # Ubuntu 24.04 AMI is resolved dynamically from Canonical's public SSM parameter in the configured region.
+  region = "us-west-2"
+  image  = data.aws_ssm_parameter.ubuntu_2404_ami.value
 
   # If you want to change instance type, ensure that GP3 EBS is available in the instance type.
   tidb_instance    = "c5.4xlarge"

@@ -4,7 +4,10 @@ global:
   deploy_dir: "/tidb-deploy"
 
 server_configs:
+  %{~ if length(tidb_hosts) > 0 ~}
   tidb: {}
+  %{~ endif ~}
+  %{~ if length(tikv_hosts) > 0 ~}
   tikv:
     cdc.min-ts-interval: 1s
     storage.block-cache.capacity: "16GB"
@@ -16,31 +19,44 @@ server_configs:
     coprocessor.region-max-size: 144MiB
     coprocessor.region-split-keys: 960000
     coprocessor.region-max-keys: 1440000
+  %{~ endif ~}
   pd:
     schedule.enable-cross-table-merge: false
+  %{~ if length(tiflash_hosts) > 0 ~}
   tiflash: {}
+  %{~ endif ~}
+  %{~ if length(ticdc_hosts) > 0 ~}
   cdc:
     newarch: true
+  %{~ endif ~}
 
+%{~ if length(tidb_hosts) > 0 ~}
 tidb_servers:
   %{~ for host in tidb_hosts ~}
   - host: ${host}
   %{~ endfor ~}
+%{~ endif ~}
 
+%{~ if length(tikv_hosts) > 0 ~}
 tikv_servers:
   %{~ for host in tikv_hosts ~}
   - host: ${host}
   %{~ endfor ~}
+%{~ endif ~}
 
+%{~ if length(tiflash_hosts) > 0 ~}
 tiflash_servers:
   %{~ for host in tiflash_hosts ~}
   - host: ${host}
   %{~ endfor ~}
+%{~ endif ~}
 
+%{~ if length(ticdc_hosts) > 0 ~}
 cdc_servers:
   %{~ for host in ticdc_hosts ~}
   - host: ${host}
   %{~ endfor ~}
+%{~ endif ~}
 
 pd_servers:
   - host: 172.31.8.1
