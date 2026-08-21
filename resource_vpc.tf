@@ -3,8 +3,9 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "main" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "172.31.0.0/16"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "172.31.0.0/16"
+  availability_zone = "us-east-1a"
 }
 
 resource "aws_internet_gateway" "main" {
@@ -26,14 +27,14 @@ resource "aws_route_table_association" "main" {
 
 resource "aws_eip" "center" {
   vpc                       = true
-  depends_on                = [ aws_internet_gateway.main ]
+  depends_on                = [aws_internet_gateway.main]
   network_interface         = aws_network_interface.center.id
   associate_with_private_ip = "172.31.1.1"
 }
 
 resource "aws_eip" "pd" {
   vpc                       = true
-  depends_on                = [ aws_internet_gateway.main ]
+  depends_on                = [aws_internet_gateway.main]
   network_interface         = aws_network_interface.pd.id
   associate_with_private_ip = "172.31.8.1"
 }
