@@ -1,5 +1,5 @@
 locals {
-  name      = "ldz-test"
+  name      = "cdc-test"
   n_tidb    = 3
   n_tikv    = 12
   n_ticdc   = 3
