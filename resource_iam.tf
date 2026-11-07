@@ -4,9 +4,9 @@ resource "aws_iam_policy" "ec2_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        "Effect": "Allow",
-        "Action": "s3:*",
-        "Resource": "*"
+        "Effect" : "Allow",
+        "Action" : "s3:*",
+        "Resource" : "*"
       }
     ]
   })
@@ -37,5 +37,10 @@ resource "aws_iam_policy_attachment" "ec2_policy_role" {
 
 resource "aws_iam_instance_profile" "ec2_profile" {
   name_prefix = local.name
-  role = aws_iam_role.ec2_role.name
+  role        = aws_iam_role.ec2_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }

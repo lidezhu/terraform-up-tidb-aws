@@ -31,6 +31,8 @@ locals {
   provisioner_add_alternative_ssh_public = [
     "echo '${file(local.alternative_ssh_public)}' | tee -a ~/.ssh/authorized_keys",
   ]
+
+  ssm_agent_user_data = file("${path.module}/files/install_ssm_agent.sh")
 }
 
 resource "aws_instance" "tidb" {
@@ -44,6 +46,13 @@ resource "aws_instance" "tidb" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.7.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 500
@@ -79,10 +88,17 @@ resource "aws_network_interface" "pd" {
 }
 
 resource "aws_instance" "pd" {
-  ami                         = local.image
-  instance_type               = local.pd_instance
-  key_name                    = aws_key_pair.master_key.id
-  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
+  ami                  = local.image
+  instance_type        = local.pd_instance
+  key_name             = aws_key_pair.master_key.id
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  user_data            = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   network_interface {
     network_interface_id = aws_network_interface.pd.id
@@ -127,6 +143,13 @@ resource "aws_instance" "tikv" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.6.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 1024
@@ -166,6 +189,13 @@ resource "aws_instance" "tidb-downstream" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.17.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 100
@@ -205,6 +235,13 @@ resource "aws_instance" "tikv-downstream" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.16.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 500
@@ -244,6 +281,13 @@ resource "aws_instance" "tiflash" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.9.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 200
@@ -283,6 +327,13 @@ resource "aws_instance" "ticdc" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.10.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 1024
@@ -322,6 +373,13 @@ resource "aws_instance" "ticdc_local" {
   subnet_id                   = aws_subnet.main.id
   associate_public_ip_address = true
   private_ip                  = "172.31.11.${count.index + 1}"
+  user_data                   = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size           = 50
@@ -364,10 +422,17 @@ resource "aws_network_interface" "center" {
 }
 
 resource "aws_instance" "center" {
-  ami                         = local.image
-  instance_type               = local.center_instance
-  key_name                    = aws_key_pair.master_key.id
-  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
+  ami                  = local.image
+  instance_type        = local.center_instance
+  key_name             = aws_key_pair.master_key.id
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  user_data            = local.ssm_agent_user_data
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   network_interface {
     network_interface_id = aws_network_interface.center.id
@@ -402,10 +467,10 @@ resource "aws_instance" "center" {
 
   provisioner "file" {
     content = templatefile("./files/topology.yaml.tftpl", {
-      tidb_hosts = aws_instance.tidb.*.private_ip,
-      tikv_hosts = aws_instance.tikv.*.private_ip,
+      tidb_hosts    = aws_instance.tidb.*.private_ip,
+      tikv_hosts    = aws_instance.tikv.*.private_ip,
       tiflash_hosts = aws_instance.tiflash.*.private_ip,
-      ticdc_hosts = aws_instance.ticdc.*.private_ip,
+      ticdc_hosts   = aws_instance.ticdc.*.private_ip,
     })
     destination = "/home/ubuntu/topology.yaml"
   }

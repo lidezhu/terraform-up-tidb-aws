@@ -18,6 +18,37 @@ The topology and instance size can be customized via [`locals_common.tf`](./loca
 
 - `~/.ssh/id_rsa.pub` must present, can be used as the public key to access VMs.
 
+### Local setup and SSM access
+
+Local dependency installation is automated on macOS (Intel and Apple Silicon):
+
+```shell
+make setup
+make login
+```
+
+`make setup` installs the AWS Session Manager plugin when needed and verifies
+AWS CLI, Terraform, and the plugin. Other operating systems are not installed
+automatically; the command prints the dependencies and verification steps that
+must be completed manually.
+
+After `terraform apply`, use SSM to access the center node and cluster services:
+
+```shell
+make shell          # interactive shell on center
+make grafana        # http://127.0.0.1:3000
+make prometheus     # http://127.0.0.1:9090
+make dashboard      # http://127.0.0.1:12379/dashboard
+make mysql-tunnel   # MySQL on 127.0.0.1:4000
+```
+
+Override the default profile or region when needed:
+
+```shell
+make login AWS_PROFILE=my-profile
+make grafana AWS_PROFILE=my-profile AWS_REGION=us-west-2
+```
+
 ## Getting Started
 
 ### 1. Clone and create project

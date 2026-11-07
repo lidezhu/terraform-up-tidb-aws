@@ -2,6 +2,18 @@ output "ssh-center" {
   value = "ssh ubuntu@${aws_instance.center.public_ip}"
 }
 
+output "aws-region" {
+  value = local.region
+}
+
+output "center-instance-id" {
+  value = aws_instance.center.id
+}
+
+output "pd-private-ip" {
+  value = aws_instance.pd.private_ip
+}
+
 output "url-tidb-dashboard" {
   value = "http://${aws_instance.pd.public_ip}:2379/dashboard"
 }
