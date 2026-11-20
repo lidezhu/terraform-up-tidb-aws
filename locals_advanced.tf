@@ -2,15 +2,16 @@
 
 locals {
   # Ubuntu 24.04 AMI is resolved dynamically from Canonical's public SSM parameter in the configured region.
-  region = "us-west-2"
+  region = "us-east-1"
   image  = data.aws_ssm_parameter.ubuntu_2404_ami.value
 
   # If you want to change instance type, ensure that GP3 EBS is available in the instance type.
   tidb_instance    = "c5.4xlarge"
   tikv_instance    = "r5b.2xlarge"
-  pd_instance      = "c5.4xlarge"
+  pd_instance      = "c6i.8xlarge"
   tiflash_instance = "c5.9xlarge"
   ticdc_instance   = "c6in.4xlarge"
+  # ticdc_instance   = "c6in.12xlarge"
   ticdc_local_instance = "i4i.2xlarge" # 8 vCPU, 64 GiB memory, one 1,875 GB local NVMe SSD
   center_instance  = "c5.2xlarge"
 

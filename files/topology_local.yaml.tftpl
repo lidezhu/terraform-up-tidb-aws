@@ -13,6 +13,9 @@ server_configs:
     storage.block-cache.capacity: "16GB"
     rocksdb.titan.enabled: true
     rocksdb.defaultcf.titan.min-blob-size: "1KB"
+    rocksdb.max-background-jobs: 8
+    rocksdb.max-sub-compactions: 4
+    storage.flow-control.l0-files-threshold: 30
   %{~ endif ~}
   pd:
     schedule.enable-cross-table-merge: false

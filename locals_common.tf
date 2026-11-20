@@ -1,8 +1,8 @@
 locals {
   name      = "cdc-test"
   n_tidb    = 3
-  n_tikv    = 8
-  n_ticdc   = 3
+  n_tikv    = 6
+  n_ticdc   = 1
   n_ticdc_local = 0
   n_tiflash = 0
 

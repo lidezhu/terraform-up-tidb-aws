@@ -1,6 +1,8 @@
 # This script is executed on all machines
 
-while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done
+if [[ "${SKIP_CLOUD_INIT_WAIT:-0}" != "1" ]]; then
+  while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done
+fi
 
 # enable core dump
 echo '* soft core unlimited' | sudo tee -a /etc/security/limits.conf

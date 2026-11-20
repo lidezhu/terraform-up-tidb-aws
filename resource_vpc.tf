@@ -48,19 +48,69 @@ resource "aws_vpc" "main" {
 
 resource "aws_subnet" "main" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "172.31.0.0/16"
+  cidr_block        = "172.31.0.0/19"
   availability_zone = local.selected_availability_zone
+
+  tags = {
+    Name = "${local.name}-private"
+  }
+}
+
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "172.31.32.0/24"
+  availability_zone       = local.selected_availability_zone
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "${local.name}-public-nat"
+  }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 }
 
-resource "aws_route_table" "main" {
+resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
+
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id
+  }
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_eip" "nat" {
+  vpc        = true
+  depends_on = [aws_internet_gateway.main]
+
+  tags = {
+    Name = "${local.name}-nat"
+  }
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public.id
+
+  depends_on = [aws_route_table_association.public]
+
+  tags = {
+    Name = "${local.name}-nat"
+  }
+}
+
+resource "aws_route_table" "main" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
   }
 }
 
@@ -69,26 +119,12 @@ resource "aws_route_table_association" "main" {
   route_table_id = aws_route_table.main.id
 }
 
-resource "aws_eip" "center" {
-  vpc                       = true
-  depends_on                = [aws_internet_gateway.main]
-  network_interface         = aws_network_interface.center.id
-  associate_with_private_ip = "172.31.1.1"
-}
-
-resource "aws_eip" "pd" {
-  vpc                       = true
-  depends_on                = [aws_internet_gateway.main]
-  network_interface         = aws_network_interface.pd.id
-  associate_with_private_ip = "172.31.8.1"
-}
-
 resource "aws_security_group" "ssh" {
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
   egress {
     from_port   = 0
@@ -110,7 +146,7 @@ resource "aws_security_group" "etcd" {
     from_port   = 2379
     to_port     = 2379
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
   vpc_id = aws_vpc.main.id
 }
@@ -120,7 +156,7 @@ resource "aws_security_group" "grafana" {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
   vpc_id = aws_vpc.main.id
 }

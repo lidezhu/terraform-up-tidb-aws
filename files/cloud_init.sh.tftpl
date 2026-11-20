@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euxo pipefail
+
+install -d -m 0755 /usr/local/lib/tidb-bootstrap
+
+printf '%s' '${install_ssm_agent_base64}' | base64 --decode > /usr/local/lib/tidb-bootstrap/install_ssm_agent.sh
+printf '%s' '${bootstrap_all_base64}' | base64 --decode > /usr/local/lib/tidb-bootstrap/bootstrap_all.sh
+chmod 0755 /usr/local/lib/tidb-bootstrap/*.sh
+
+install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/.ssh
+touch /home/ubuntu/.ssh/authorized_keys
+chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys
+chmod 0600 /home/ubuntu/.ssh/authorized_keys
+
+alternative_ssh_public=$(printf '%s' '${alternative_ssh_public_base64}' | base64 --decode)
+if ! grep -qxF "$alternative_ssh_public" /home/ubuntu/.ssh/authorized_keys; then
+  printf '%s\n' "$alternative_ssh_public" >> /home/ubuntu/.ssh/authorized_keys
+fi
+
+bash /usr/local/lib/tidb-bootstrap/install_ssm_agent.sh
+sudo -u ubuntu -H env SKIP_CLOUD_INIT_WAIT=1 bash /usr/local/lib/tidb-bootstrap/bootstrap_all.sh
+
+%{ if bootstrap_ticdc_local_disk_base64 != "" ~}
+printf '%s' '${bootstrap_ticdc_local_disk_base64}' | base64 --decode > /usr/local/lib/tidb-bootstrap/bootstrap_ticdc_local_disk.sh
+chmod 0755 /usr/local/lib/tidb-bootstrap/bootstrap_ticdc_local_disk.sh
+sudo -u ubuntu -H bash /usr/local/lib/tidb-bootstrap/bootstrap_ticdc_local_disk.sh
+%{ endif ~}
+
+%{ if bootstrap_center_base64 != "" ~}
+printf '%s' '${bootstrap_center_base64}' | base64 --decode > /usr/local/lib/tidb-bootstrap/bootstrap_center.sh
+chmod 0755 /usr/local/lib/tidb-bootstrap/bootstrap_center.sh
+
+printf '%s' '${haproxy_config_base64}' | base64 --decode > /home/ubuntu/haproxy.cfg
+printf '%s' '${topology_base64}' | base64 --decode > /home/ubuntu/topology.yaml
+printf '%s' '${topology_local_base64}' | base64 --decode > /home/ubuntu/topology_local.yaml
+printf '%s' '${topology_downstream_base64}' | base64 --decode > /home/ubuntu/topology-downstream.yaml
+printf '%s' '${topology_small_downstream_base64}' | base64 --decode > /home/ubuntu/topology-small-downstream.yaml
+chown ubuntu:ubuntu /home/ubuntu/*.cfg /home/ubuntu/*.yaml
+
+sudo -u ubuntu -H bash /usr/local/lib/tidb-bootstrap/bootstrap_center.sh
+%{ endif ~}

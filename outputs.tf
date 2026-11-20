@@ -1,5 +1,5 @@
 output "ssh-center" {
-  value = "ssh ubuntu@${aws_instance.center.public_ip}"
+  value = "make shell"
 }
 
 output "aws-region" {
@@ -10,16 +10,20 @@ output "center-instance-id" {
   value = aws_instance.center.id
 }
 
+output "cluster-name" {
+  value = local.name
+}
+
 output "pd-private-ip" {
   value = aws_instance.pd.private_ip
 }
 
 output "url-tidb-dashboard" {
-  value = "http://${aws_instance.pd.public_ip}:2379/dashboard"
+  value = "Run 'make dashboard', then open http://127.0.0.1:12379/dashboard"
 }
 
 output "url-grafana" {
-  value = "http://${aws_instance.pd.public_ip}:3000"
+  value = "Run 'make grafana', then open http://127.0.0.1:3000"
 }
 
 output "private-ip-tidb" {
@@ -45,14 +49,6 @@ output "private-ip-ticdc-local" {
 output "private-ip-pd" {
   value = aws_instance.pd.*.private_ip
 }
-
-#output "url-tidb-dashboard-downstream" {
-#  value = "http://${aws_instance.pd-downstream.public_ip}:2379/dashboard"
-#}
-
-#output "url-grafana-downstream" {
-#  value = "http://${aws_instance.pd-downstream.public_ip}:3000"
-#}
 
 output "private-ip-tidb-downstream" {
   value = aws_instance.tidb-downstream.*.private_ip

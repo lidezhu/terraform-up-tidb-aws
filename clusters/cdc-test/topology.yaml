@@ -1,0 +1,60 @@
+global:
+  user: "tidb"
+  ssh_port: 22
+  deploy_dir: "/tidb-deploy"
+
+server_configs:
+  tidb: {}
+  tikv:
+    cdc.min-ts-interval: 1s
+    storage.block-cache.capacity: "16GB"
+    rocksdb.titan.enabled: true
+    rocksdb.defaultcf.titan.min-blob-size: "1KB"
+    rocksdb.max-background-jobs: 8
+    rocksdb.max-sub-compactions: 4
+    storage.flow-control.l0-files-threshold: 30
+    raftstore.snap-generator-pool-size: 4
+    server.snap-io-max-bytes-per-sec: 400MiB
+    coprocessor.region-split-size: 96MiB
+    coprocessor.region-max-size: 144MiB
+    coprocessor.region-split-keys: 960000
+    coprocessor.region-max-keys: 1440000
+  pd:
+    schedule.enable-cross-table-merge: false
+  cdc:
+    newarch: true
+
+tidb_servers:
+  - host: 172.31.7.1
+  - host: 172.31.7.2
+  - host: 172.31.7.3
+
+tikv_servers:
+  - host: 172.31.6.1
+  - host: 172.31.6.2
+  - host: 172.31.6.3
+  - host: 172.31.6.4
+  - host: 172.31.6.5
+  - host: 172.31.6.6
+  - host: 172.31.6.7
+  - host: 172.31.6.8
+  - host: 172.31.6.9
+  - host: 172.31.6.10
+  - host: 172.31.6.11
+  - host: 172.31.6.12
+  - host: 172.31.6.13
+  - host: 172.31.6.14
+  - host: 172.31.6.15
+  - host: 172.31.6.16
+
+cdc_servers:
+  - host: 172.31.10.1
+
+pd_servers:
+  - host: 172.31.8.1
+
+monitoring_servers:
+  - host: 172.31.8.1
+
+grafana_servers:
+  - host: 172.31.8.1

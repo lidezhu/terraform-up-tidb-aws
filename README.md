@@ -18,6 +18,8 @@ The topology and instance size can be customized via [`locals_common.tf`](./loca
 
 - `~/.ssh/id_rsa.pub` must present, can be used as the public key to access VMs.
 
+- The AWS identity used locally must be allowed to start SSM sessions.
+
 ### Local setup and SSM access
 
 Local dependency installation is automated on macOS (Intel and Apple Silicon):
@@ -41,6 +43,17 @@ make prometheus     # http://127.0.0.1:9090
 make dashboard      # http://127.0.0.1:12379/dashboard
 make mysql-tunnel   # MySQL on 127.0.0.1:4000
 ```
+
+For a named TiUP cluster, use its configuration under `clusters/`:
+
+```shell
+make tiup-display CLUSTER=cdc-test
+make tiup-grafana CLUSTER=cdc-test  # http://127.0.0.1:3000
+```
+
+All EC2 instances have private IP addresses only. Session Manager is used for
+interactive access and port forwarding; no inbound connection from the
+internet is required.
 
 Override the default profile or region when needed:
 
@@ -79,7 +92,7 @@ locals {
 }
 ```
 
-### 3. Create and start VMs
+### 3. Create VMs
 
 ```shell
 terraform apply -auto-approve
@@ -101,30 +114,73 @@ private-ip-tikv = [
   "172.31.6.2",
   "172.31.6.3",
 ]
-ssh-center = "ssh ubuntu@<center_vm_ip>"
-tidb-dashboard = "http://<pd_vm_ip>:2379/dashboard"
+ssh-center = "make shell"
+url-grafana = "Run 'make grafana', then open http://127.0.0.1:3000"
 ```
 
-### 4. Connect to Center VM and deploy cluster
+The private subnet uses a NAT gateway for outbound package and TiUP downloads.
+The NAT gateway has an Elastic IP, but none of the EC2 instances has a public
+IP address.
 
-You can now connect to the center VM and deploy a TiDB cluster in these VMs:
+### 4. Deploy the cluster
+
+Each TiUP cluster has its own directory:
+
+```text
+clusters/<name>/
+├── cluster.env
+├── topology.yaml
+├── scale-out/
+└── scale-in/
+```
+
+`cluster.env` contains the TiUP cluster name and version. Hosts, monitoring,
+and Grafana remain in `topology.yaml`.
+
+Deploy the `cdc-test` topology through a temporary SSM SSH tunnel:
 
 ```shell
-ssh ubuntu@<center_vm_ip>
-# or
-# ssh -i ./master_key ubuntu@<center_vm_ip>
-
-# The topology.yaml is already created for you
-tiup cluster deploy tidb-test nightly ./topology.yaml --user ubuntu -i ~/.ssh/id_rsa --yes
-tiup cluster start tidb-test
+make tiup-deploy CLUSTER=cdc-test
 ```
+
+This waits for cloud-init on all nodes, uploads `master_key` to the center over
+the temporary tunnel, deploys `clusters/cdc-test/topology.yaml`, and starts the
+cluster.
+
+To scale out, put a TiUP scale-out topology at
+`clusters/cdc-test/scale-out/add-tikv-17.yaml`, then run:
+
+```shell
+make tiup-scale-out CLUSTER=cdc-test CHANGE=add-tikv-17
+```
+
+To scale in, create `clusters/cdc-test/scale-in/remove-tikv-17.env`:
+
+```shell
+NODES=172.31.6.17:20160
+```
+
+Then run:
+
+```shell
+make tiup-scale-in CLUSTER=cdc-test CHANGE=remove-tikv-17
+make tiup-display CLUSTER=cdc-test
+make tiup-prune CLUSTER=cdc-test
+```
+
+Other supported operations are `tiup-start`, `tiup-stop`, `tiup-reload`,
+`tiup-upgrade`, and `tiup-destroy`. Set `CLUSTERS_DIR` only when cluster
+directories are stored somewhere other than `./clusters`.
 
 ### 5. Connect to TiDB
 
-A HAProxy is deployed in the Center VM, load balancing multiple TiDB instances:
+A HAProxy is deployed in the Center VM, load balancing multiple TiDB instances.
+Use SSM for a shell or local port forwarding:
 
 ```shell
-ssh ubuntu@<center_vm_ip>
+make shell
+make mysql-tunnel
+# In another terminal:
 mysql -u root --host 127.0.0.1 --port 4000
 ```
 
@@ -143,7 +199,8 @@ terraform destroy -auto-approve
 | ✅     | Ubuntu 20.04 (x86_64)                      |
 | ✅     | Intra-host public key authentication       |
 | ✅     | HAProxy for multiple TiDB instances        |
-| ✅     | Expose PD and Grafana for public access    |
+| ✅     | Access PD and Grafana through SSM tunnels  |
+| ✅     | EC2 instances use private IP addresses only |
 | ✅     | Customize instance count and size          |
 | ✅     | Enable core dump                           |
 | ✅     | With zsh                                   |
