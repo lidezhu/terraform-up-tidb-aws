@@ -41,6 +41,7 @@ make shell          # interactive shell on center
 make grafana        # http://127.0.0.1:3000
 make prometheus     # http://127.0.0.1:9090
 make dashboard      # http://127.0.0.1:12379/dashboard
+make mysql          # open a MySQL client through SSM
 make mysql-tunnel   # MySQL on 127.0.0.1:4000
 ```
 
@@ -248,13 +249,23 @@ It does not destroy EC2 instances or other Terraform resources.
 ### 5. Connect to TiDB
 
 A HAProxy is deployed in the Center VM, load balancing multiple TiDB instances.
-Use SSM for a shell or local port forwarding:
+Use the following command by default. It opens the SSM tunnel, connects the
+MySQL client as `root`, and closes the tunnel when the client exits:
 
 ```shell
-make shell
+make mysql
+```
+
+If you need to customize the MySQL command line, such as the user, password,
+or database, run only the tunnel in one terminal and use your own command in
+another terminal:
+
+```shell
+# Terminal 1
 make mysql-tunnel
-# In another terminal:
-mysql -u root --host 127.0.0.1 --port 4000
+
+# Terminal 2
+mysql -u my_user -p --database my_database --host 127.0.0.1 --port 4000
 ```
 
 If the cluster was started normally and still has an empty root password, set

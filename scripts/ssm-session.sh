@@ -21,6 +21,7 @@ done
 action="$1"
 profile="${AWS_PROFILE:-default}"
 region="${AWS_REGION:-}"
+mysql_local_port="${MYSQL_LOCAL_PORT:-4000}"
 
 if [[ -z "$region" ]]; then
     region="$(terraform output -raw aws-region)"
@@ -62,13 +63,17 @@ dashboard)
     start_remote_forward "$monitoring_host" 2379 12379
     ;;
 mysql-tunnel)
-    echo "TiDB will be available at 127.0.0.1:4000"
+    if [[ ! "$mysql_local_port" =~ ^[0-9]+$ ]] || ((mysql_local_port < 1 || mysql_local_port > 65535)); then
+        echo "MYSQL_LOCAL_PORT must be a valid TCP port" >&2
+        exit 2
+    fi
+    echo "TiDB will be available at 127.0.0.1:$mysql_local_port"
     exec aws ssm start-session \
         --profile "$profile" \
         --region "$region" \
         --target "$center_instance_id" \
         --document-name AWS-StartPortForwardingSession \
-        --parameters '{"portNumber":["4000"],"localPortNumber":["4000"]}'
+        --parameters "{\"portNumber\":[\"4000\"],\"localPortNumber\":[\"$mysql_local_port\"]}"
     ;;
 *)
     usage

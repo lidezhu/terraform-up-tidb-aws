@@ -3,11 +3,13 @@ SHELL := /bin/bash
 
 AWS_PROFILE ?= default
 AWS_REGION ?=
+MYSQL_LOCAL_PORT ?= 4000
 
 export AWS_PROFILE
 export AWS_REGION
+export MYSQL_LOCAL_PORT
 
-.PHONY: help setup install-ssm-plugin doctor login shell grafana prometheus dashboard mysql-tunnel
+.PHONY: help setup install-ssm-plugin doctor login shell grafana prometheus dashboard mysql mysql-tunnel
 
 help:
 	@echo "Available targets:"
@@ -17,6 +19,7 @@ help:
 	@echo "  make grafana        Forward localhost:3000 to Grafana"
 	@echo "  make prometheus     Forward localhost:9090 to Prometheus"
 	@echo "  make dashboard      Forward localhost:12379 to TiDB Dashboard"
+	@echo "  make mysql          Open a MySQL client through an SSM tunnel"
 	@echo "  make mysql-tunnel   Forward localhost:4000 to TiDB through HAProxy"
 
 setup: install-ssm-plugin doctor
@@ -37,3 +40,6 @@ login:
 
 shell grafana prometheus dashboard mysql-tunnel:
 	@bash ./scripts/ssm-session.sh "$@"
+
+mysql:
+	@bash ./scripts/mysql-session.sh
