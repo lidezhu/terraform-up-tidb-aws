@@ -24,14 +24,7 @@ make tiup-deploy CLUSTER=example
 make tiup-display CLUSTER=example
 ```
 
-The standard deploy/start leaves the new TiDB `root` password empty. To
-generate and print a one-time random password on the first start, use:
-
-```shell
-make tiup-deploy-init CLUSTER=example
-# Or, for an already-deployed cluster that has never been started:
-make tiup-start-init CLUSTER=example
-```
+The standard deploy/start leaves the new TiDB `root` password empty.
 
 For scale-out, add a native TiUP scale-out topology and refer to its basename:
 

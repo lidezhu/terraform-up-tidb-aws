@@ -148,22 +148,7 @@ the temporary tunnel, deploys `clusters/cdc-test/topology.yaml`, and starts the
 cluster. This is a standard TiUP start: a newly created TiDB `root` account has
 an empty password.
 
-For a new cluster that should generate a random TiDB `root` password on its
-first start, use the safe deployment command instead:
-
-```shell
-make tiup-deploy-init CLUSTER=cdc-test
-```
-
-The generated password is printed only once. Save it before the command exits.
-If the cluster has already been deployed but has never been started, the
-equivalent safe-start command is:
-
-```shell
-make tiup-start-init CLUSTER=cdc-test
-```
-
-Normal subsequent starts do not change the database password:
+Subsequent starts do not change the database password:
 
 ```shell
 make tiup-start CLUSTER=cdc-test

@@ -4,13 +4,11 @@ set -euo pipefail
 usage() {
     cat >&2 <<'EOF'
 Usage:
-  scripts/tiup-cluster.sh deploy      <cluster>
-  scripts/tiup-cluster.sh deploy-init <cluster>
+  scripts/tiup-cluster.sh deploy    <cluster>
   scripts/tiup-cluster.sh scale-out <cluster> <change>
   scripts/tiup-cluster.sh scale-in  <cluster> <change>
   scripts/tiup-cluster.sh display   <cluster>
-  scripts/tiup-cluster.sh start      <cluster>
-  scripts/tiup-cluster.sh start-init <cluster>
+  scripts/tiup-cluster.sh start     <cluster>
   scripts/tiup-cluster.sh stop      <cluster>
   scripts/tiup-cluster.sh reload    <cluster>
   scripts/tiup-cluster.sh prune     <cluster>
@@ -30,7 +28,7 @@ cluster_selector="$2"
 change_selector="${3:-}"
 
 case "$action" in
-deploy | deploy-init | display | start | start-init | stop | reload | prune | upgrade | destroy | grafana)
+deploy | display | start | stop | reload | prune | upgrade | destroy | grafana)
     [[ -z "$change_selector" ]] || usage
     ;;
 scale-out | scale-in)
@@ -122,12 +120,12 @@ local_operation_file=""
 scale_in_nodes=""
 
 case "$action" in
-deploy | deploy-init | grafana)
+deploy | grafana)
     if [[ ! -f "$topology_file" ]]; then
         echo "Topology not found: $topology_file" >&2
         exit 1
     fi
-    if [[ "$action" == deploy* && -z "$tidb_version" ]]; then
+    if [[ "$action" == "deploy" && -z "$tidb_version" ]]; then
         echo "TIDB_VERSION is required in $cluster_config for $action" >&2
         exit 1
     fi
@@ -307,7 +305,7 @@ ssh "${ssh_options[@]}" ubuntu@127.0.0.1 mkdir -p "$remote_cluster_directory"
 scp "${scp_options[@]}" "$cluster_config" ubuntu@127.0.0.1:"$remote_cluster_directory/cluster.env"
 
 case "$action" in
-deploy | deploy-init)
+deploy)
     remote_operation_file="$remote_cluster_directory/topology.yaml"
     scp "${scp_options[@]}" "$topology_file" ubuntu@127.0.0.1:"$remote_operation_file"
     ;;
@@ -371,7 +369,7 @@ wait_for_hosts() {
 "$tiup" install cluster
 
 case "$action" in
-deploy | deploy-init)
+deploy)
     wait_for_hosts "$operation_file"
     if "$tiup" cluster display "$cluster_name" >/dev/null 2>&1; then
         echo "TiDB cluster $cluster_name already exists; skipping deploy."
@@ -384,11 +382,7 @@ deploy | deploy-init)
             -i "$identity_file" \
             --yes
     fi
-    if [[ "$action" == "deploy-init" ]]; then
-        "$tiup" cluster start "$cluster_name" --init --yes
-    else
-        "$tiup" cluster start "$cluster_name" --yes
-    fi
+    "$tiup" cluster start "$cluster_name" --yes
     ;;
 scale-out)
     wait_for_hosts "$operation_file"
@@ -413,9 +407,6 @@ display)
     ;;
 start)
     "$tiup" cluster start "$cluster_name" --yes
-    ;;
-start-init)
-    "$tiup" cluster start "$cluster_name" --init --yes
     ;;
 stop)
     "$tiup" cluster stop "$cluster_name" --yes

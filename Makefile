@@ -10,7 +10,7 @@ export AWS_REGION
 export CLUSTERS_DIR
 
 .PHONY: help setup install-ssm-plugin doctor login deploy \
-	tiup-deploy tiup-deploy-init tiup-scale-out tiup-scale-in tiup-display tiup-start tiup-start-init tiup-stop \
+	tiup-deploy tiup-scale-out tiup-scale-in tiup-display tiup-start tiup-stop \
 	tiup-reload tiup-prune tiup-upgrade tiup-destroy tiup-grafana \
 	shell grafana prometheus dashboard mysql-tunnel
 
@@ -20,16 +20,12 @@ help:
 	@echo "  make login          Log in to AWS SSO"
 	@echo "  make tiup-deploy CLUSTER=name"
 	@echo "                      Deploy/start clusters/name/topology.yaml"
-	@echo "  make tiup-deploy-init CLUSTER=name"
-	@echo "                      Deploy and generate the TiDB root password on first start"
 	@echo "  make tiup-scale-out CLUSTER=name CHANGE=change"
 	@echo "                      Apply clusters/name/scale-out/change.yaml"
 	@echo "  make tiup-scale-in CLUSTER=name CHANGE=change"
 	@echo "                      Apply clusters/name/scale-in/change.env"
 	@echo "  make tiup-display CLUSTER=name"
 	@echo "                      Display the selected TiUP cluster"
-	@echo "  make tiup-start-init CLUSTER=name"
-	@echo "                      First safe start; print a one-time TiDB root password"
 	@echo "  make tiup-{start,stop,reload,prune,upgrade,destroy} CLUSTER=name"
 	@echo "                      Operate on the selected TiUP cluster"
 	@echo "  make tiup-grafana CLUSTER=name"
@@ -58,7 +54,7 @@ login:
 
 deploy: tiup-deploy
 
-tiup-deploy tiup-deploy-init tiup-display tiup-start tiup-start-init tiup-stop tiup-reload tiup-prune tiup-upgrade tiup-destroy tiup-grafana:
+tiup-deploy tiup-display tiup-start tiup-stop tiup-reload tiup-prune tiup-upgrade tiup-destroy tiup-grafana:
 	@test -n "$(CLUSTER)" || (echo "CLUSTER is required, for example: make $@ CLUSTER=cdc-test" >&2; exit 2)
 	@action="$(@:tiup-%=%)"; bash ./scripts/tiup-cluster.sh "$$action" "$(CLUSTER)"
 
