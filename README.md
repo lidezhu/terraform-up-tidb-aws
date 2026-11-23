@@ -137,7 +137,19 @@ clusters/<name>/
 `cluster.env` contains the TiUP cluster name and version. Hosts, monitoring,
 and Grafana remain in `topology.yaml`.
 
-Deploy the `cdc-test` topology through a temporary SSM SSH tunnel:
+Example `cluster.env`:
+
+```shell
+CLUSTER_NAME=cdc-test
+TIDB_VERSION=v8.5.8
+```
+
+All commands select a directory by its name under `./clusters`; full paths are
+not required.
+
+#### Deploy and inspect
+
+Deploy the topology through a temporary SSM SSH tunnel:
 
 ```shell
 make tiup-deploy CLUSTER=cdc-test
@@ -154,12 +166,43 @@ Subsequent starts do not change the database password:
 make tiup-start CLUSTER=cdc-test
 ```
 
+Display the current TiUP topology and component status:
+
+```shell
+make tiup-display CLUSTER=cdc-test
+```
+
+#### Start and stop
+
+```shell
+make tiup-stop CLUSTER=cdc-test
+make tiup-start CLUSTER=cdc-test
+```
+
+These commands stop or start the TiUP cluster only. They do not stop or start
+the EC2 instances.
+
+#### Scale out
+
 To scale out, put a TiUP scale-out topology at
-`clusters/cdc-test/scale-out/add-tikv-17.yaml`, then run:
+`clusters/cdc-test/scale-out/add-tikv-17.yaml`. For example:
+
+```yaml
+tikv_servers:
+  - host: 172.31.6.17
+```
+
+Run the operation using the file basename:
 
 ```shell
 make tiup-scale-out CLUSTER=cdc-test CHANGE=add-tikv-17
 ```
+
+The script waits for cloud-init on the new hosts, runs `tiup cluster check`,
+and then runs `tiup cluster scale-out`. Provision the new EC2 instances with
+Terraform before running this command.
+
+#### Scale in and prune
 
 To scale in, create `clusters/cdc-test/scale-in/remove-tikv-17.env`:
 
@@ -175,9 +218,97 @@ make tiup-display CLUSTER=cdc-test
 make tiup-prune CLUSTER=cdc-test
 ```
 
-Other supported operations are `tiup-start`, `tiup-stop`, `tiup-reload`,
-`tiup-upgrade`, and `tiup-destroy`. Set `CLUSTERS_DIR` only when cluster
-directories are stored somewhere other than `./clusters`.
+`NODES` contains TiUP node IDs, not only host addresses. Obtain the IDs from
+`make tiup-display`. Multiple IDs can be separated by commas. For stateful
+components such as TiKV and TiFlash, wait until the removed nodes reach the
+`Tombstone` state before running `tiup-prune` or deleting their EC2 instances.
+
+#### Change configuration and reload
+
+TiUP stores the active cluster configuration on the Center instance. To edit
+it interactively:
+
+```shell
+make shell
+sudo -iu ubuntu
+~/.tiup/bin/tiup cluster edit-config cdc-test
+```
+
+After saving the configuration, apply it with:
+
+```shell
+make tiup-reload CLUSTER=cdc-test
+```
+
+Editing the local initial `topology.yaml` after deployment does not by itself
+change an existing cluster.
+
+#### Upgrade
+
+Set the target version in `clusters/cdc-test/cluster.env`, then run:
+
+```shell
+make tiup-upgrade CLUSTER=cdc-test
+```
+
+The command runs `tiup cluster upgrade` using `TIDB_VERSION` from that file.
+
+#### Access Grafana
+
+```shell
+make tiup-grafana CLUSTER=cdc-test
+```
+
+The Grafana host is read from `grafana_servers` in the selected
+`topology.yaml`. Open <http://127.0.0.1:3000> while the command is running.
+
+#### Destroy a TiUP cluster
+
+```shell
+make tiup-destroy CLUSTER=cdc-test
+```
+
+This is destructive: TiUP stops the cluster, removes deployed data from the
+cluster nodes, and removes the cluster's TiUP management metadata from Center.
+It does not destroy EC2 instances or other Terraform resources.
+
+#### Command reference
+
+| Command | Purpose |
+| --- | --- |
+| `make tiup-deploy CLUSTER=<name>` | Deploy `topology.yaml` and start the cluster |
+| `make tiup-display CLUSTER=<name>` | Display topology and component status |
+| `make tiup-start CLUSTER=<name>` | Start all cluster components |
+| `make tiup-stop CLUSTER=<name>` | Stop all cluster components |
+| `make tiup-scale-out CLUSTER=<name> CHANGE=<change>` | Apply `scale-out/<change>.yaml` |
+| `make tiup-scale-in CLUSTER=<name> CHANGE=<change>` | Remove the IDs in `scale-in/<change>.env` |
+| `make tiup-prune CLUSTER=<name>` | Remove Tombstone nodes from TiUP metadata |
+| `make tiup-reload CLUSTER=<name>` | Reload the active TiUP configuration |
+| `make tiup-upgrade CLUSTER=<name>` | Upgrade to the version in `cluster.env` |
+| `make tiup-grafana CLUSTER=<name>` | Forward the selected cluster's Grafana to localhost |
+| `make tiup-destroy CLUSTER=<name>` | Destroy the TiUP cluster, but keep EC2 resources |
+
+`make deploy CLUSTER=<name>` remains an alias for `make tiup-deploy`.
+
+#### Overrides
+
+The following variables can be supplied before a command:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CLUSTERS_DIR` | `./clusters` | Use cluster directories from another location |
+| `AWS_PROFILE` | `default` | AWS CLI profile used for SSM |
+| `AWS_REGION` | Terraform output | Override the AWS region |
+| `CENTER_INSTANCE_ID` | Terraform output | Override the Center EC2 instance ID |
+| `MASTER_SSH_KEY` | `./master_key` | SSH key used through the SSM tunnel |
+| `SSM_SSH_PORT` | `2222` | Local port used for the temporary SSH tunnel |
+
+Example:
+
+```shell
+AWS_PROFILE=bench SSM_SSH_PORT=2223 \
+  make tiup-display CLUSTER=cdc-test
+```
 
 ### 5. Connect to TiDB
 
