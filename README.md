@@ -145,7 +145,29 @@ make tiup-deploy CLUSTER=cdc-test
 
 This waits for cloud-init on all nodes, uploads `master_key` to the center over
 the temporary tunnel, deploys `clusters/cdc-test/topology.yaml`, and starts the
-cluster.
+cluster. This is a standard TiUP start: a newly created TiDB `root` account has
+an empty password.
+
+For a new cluster that should generate a random TiDB `root` password on its
+first start, use the safe deployment command instead:
+
+```shell
+make tiup-deploy-init CLUSTER=cdc-test
+```
+
+The generated password is printed only once. Save it before the command exits.
+If the cluster has already been deployed but has never been started, the
+equivalent safe-start command is:
+
+```shell
+make tiup-start-init CLUSTER=cdc-test
+```
+
+Normal subsequent starts do not change the database password:
+
+```shell
+make tiup-start CLUSTER=cdc-test
+```
 
 To scale out, put a TiUP scale-out topology at
 `clusters/cdc-test/scale-out/add-tikv-17.yaml`, then run:
@@ -182,6 +204,13 @@ make shell
 make mysql-tunnel
 # In another terminal:
 mysql -u root --host 127.0.0.1 --port 4000
+```
+
+If the cluster was started normally and still has an empty root password, set
+one after connecting:
+
+```sql
+ALTER USER 'root'@'%' IDENTIFIED BY 'replace-with-a-strong-password';
 ```
 
 ### 6. Finally, destroy VMs

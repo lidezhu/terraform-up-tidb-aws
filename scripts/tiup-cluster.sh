@@ -4,11 +4,13 @@ set -euo pipefail
 usage() {
     cat >&2 <<'EOF'
 Usage:
-  scripts/tiup-cluster.sh deploy    <cluster>
+  scripts/tiup-cluster.sh deploy      <cluster>
+  scripts/tiup-cluster.sh deploy-init <cluster>
   scripts/tiup-cluster.sh scale-out <cluster> <change>
   scripts/tiup-cluster.sh scale-in  <cluster> <change>
   scripts/tiup-cluster.sh display   <cluster>
-  scripts/tiup-cluster.sh start     <cluster>
+  scripts/tiup-cluster.sh start      <cluster>
+  scripts/tiup-cluster.sh start-init <cluster>
   scripts/tiup-cluster.sh stop      <cluster>
   scripts/tiup-cluster.sh reload    <cluster>
   scripts/tiup-cluster.sh prune     <cluster>
@@ -28,7 +30,7 @@ cluster_selector="$2"
 change_selector="${3:-}"
 
 case "$action" in
-deploy | display | start | stop | reload | prune | upgrade | destroy | grafana)
+deploy | deploy-init | display | start | start-init | stop | reload | prune | upgrade | destroy | grafana)
     [[ -z "$change_selector" ]] || usage
     ;;
 scale-out | scale-in)
@@ -120,13 +122,13 @@ local_operation_file=""
 scale_in_nodes=""
 
 case "$action" in
-deploy | grafana)
+deploy | deploy-init | grafana)
     if [[ ! -f "$topology_file" ]]; then
         echo "Topology not found: $topology_file" >&2
         exit 1
     fi
-    if [[ "$action" == "deploy" && -z "$tidb_version" ]]; then
-        echo "TIDB_VERSION is required in $cluster_config for deploy" >&2
+    if [[ "$action" == deploy* && -z "$tidb_version" ]]; then
+        echo "TIDB_VERSION is required in $cluster_config for $action" >&2
         exit 1
     fi
     ;;
@@ -177,7 +179,7 @@ if [[ "$action" == "grafana" ]]; then
     MONITORING_HOST="$grafana_host" exec bash "$script_directory/ssm-session.sh" grafana
 fi
 
-for command_name in aws terraform session-manager-plugin ssh scp nc; do
+for command_name in aws terraform session-manager-plugin ssh scp nc lsof; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         echo "Required command is not installed: $command_name" >&2
         echo "Run 'make setup' on macOS, or install the dependencies manually." >&2
@@ -209,8 +211,12 @@ fi
 temporary_directory="$(mktemp -d)"
 tunnel_log="$temporary_directory/ssm-tunnel.log"
 tunnel_pid=""
+tunnel_listener_pid=""
 
 cleanup() {
+    if [[ -n "$tunnel_listener_pid" ]] && kill -0 "$tunnel_listener_pid" >/dev/null 2>&1; then
+        kill "$tunnel_listener_pid" >/dev/null 2>&1 || true
+    fi
     if [[ -n "$tunnel_pid" ]] && kill -0 "$tunnel_pid" >/dev/null 2>&1; then
         kill "$tunnel_pid" >/dev/null 2>&1 || true
         wait "$tunnel_pid" >/dev/null 2>&1 || true
@@ -271,6 +277,12 @@ if ! nc -z 127.0.0.1 "$ssh_port" >/dev/null 2>&1; then
     exit 1
 fi
 
+tunnel_listener_pid="$(lsof -t -iTCP:"$ssh_port" -sTCP:LISTEN | head -1)"
+if [[ -z "$tunnel_listener_pid" ]]; then
+    echo "Could not identify the Session Manager tunnel process on port $ssh_port" >&2
+    exit 1
+fi
+
 ssh_options=(
     -p "$ssh_port"
     -i "$master_ssh_key"
@@ -295,7 +307,7 @@ ssh "${ssh_options[@]}" ubuntu@127.0.0.1 mkdir -p "$remote_cluster_directory"
 scp "${scp_options[@]}" "$cluster_config" ubuntu@127.0.0.1:"$remote_cluster_directory/cluster.env"
 
 case "$action" in
-deploy)
+deploy | deploy-init)
     remote_operation_file="$remote_cluster_directory/topology.yaml"
     scp "${scp_options[@]}" "$topology_file" ubuntu@127.0.0.1:"$remote_operation_file"
     ;;
@@ -309,19 +321,30 @@ scp "${scp_options[@]}" "$master_ssh_key" ubuntu@127.0.0.1:"$remote_key_file"
 ssh "${ssh_options[@]}" ubuntu@127.0.0.1 \
     "install -m 0600 '$remote_key_file' /home/ubuntu/.ssh/id_rsa && rm -f '$remote_key_file'"
 
+remote_operation_argument="${remote_operation_file:-__NONE__}"
+scale_in_nodes_argument="${scale_in_nodes:-__NONE__}"
+
 ssh "${ssh_options[@]}" ubuntu@127.0.0.1 bash -s -- \
     "$action" \
     "$cluster_name" \
     "$tidb_version" \
-    "$remote_operation_file" \
-    "$scale_in_nodes" <<'REMOTE_SCRIPT'
+    "$remote_operation_argument" \
+    "$scale_in_nodes_argument" <<'REMOTE_SCRIPT'
 set -euo pipefail
 
 action="$1"
 cluster_name="$2"
 tidb_version="$3"
-operation_file="$4"
-scale_in_nodes="$5"
+operation_file="${4:-}"
+scale_in_nodes="${5:-}"
+
+if [[ "$operation_file" == "__NONE__" ]]; then
+    operation_file=""
+fi
+if [[ "$scale_in_nodes" == "__NONE__" ]]; then
+    scale_in_nodes=""
+fi
+
 identity_file=/home/ubuntu/.ssh/id_rsa
 tiup=/home/ubuntu/.tiup/bin/tiup
 
@@ -348,7 +371,7 @@ wait_for_hosts() {
 "$tiup" install cluster
 
 case "$action" in
-deploy)
+deploy | deploy-init)
     wait_for_hosts "$operation_file"
     if "$tiup" cluster display "$cluster_name" >/dev/null 2>&1; then
         echo "TiDB cluster $cluster_name already exists; skipping deploy."
@@ -361,7 +384,11 @@ deploy)
             -i "$identity_file" \
             --yes
     fi
-    "$tiup" cluster start "$cluster_name" --yes
+    if [[ "$action" == "deploy-init" ]]; then
+        "$tiup" cluster start "$cluster_name" --init --yes
+    else
+        "$tiup" cluster start "$cluster_name" --yes
+    fi
     ;;
 scale-out)
     wait_for_hosts "$operation_file"
@@ -386,6 +413,9 @@ display)
     ;;
 start)
     "$tiup" cluster start "$cluster_name" --yes
+    ;;
+start-init)
+    "$tiup" cluster start "$cluster_name" --init --yes
     ;;
 stop)
     "$tiup" cluster stop "$cluster_name" --yes
