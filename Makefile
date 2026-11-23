@@ -9,12 +9,11 @@ export AWS_PROFILE
 export AWS_REGION
 export MYSQL_LOCAL_PORT
 
-.PHONY: help setup install-ssm-plugin doctor login shell grafana prometheus dashboard mysql mysql-tunnel
+.PHONY: help setup install-ssm-plugin doctor shell grafana prometheus dashboard mysql mysql-tunnel
 
 help:
 	@echo "Available targets:"
 	@echo "  make setup          Install and verify local dependencies (macOS only)"
-	@echo "  make login          Log in to AWS SSO"
 	@echo "  make shell          Open a shell on the center instance through SSM"
 	@echo "  make grafana        Forward localhost:3000 to Grafana"
 	@echo "  make prometheus     Forward localhost:9090 to Prometheus"
@@ -34,9 +33,6 @@ doctor:
 	@aws --version
 	@terraform version | head -1
 	@session-manager-plugin --version
-
-login:
-	@aws sso login --profile "$(AWS_PROFILE)"
 
 shell grafana prometheus dashboard mysql-tunnel:
 	@bash ./scripts/ssm-session.sh "$@"

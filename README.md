@@ -20,40 +20,22 @@ The topology and instance size can be customized via [`locals_common.tf`](./loca
 
 - The AWS identity used locally must be allowed to start SSM sessions.
 
-### Local setup and SSM access
+### Local setup
 
 Local dependency installation is automated on macOS (Intel and Apple Silicon):
 
 ```shell
 make setup
-make login
 ```
 
 `make setup` installs the AWS Session Manager plugin when needed and verifies
 AWS CLI, Terraform, and the plugin. Other operating systems are not installed
 automatically; the command prints the dependencies and verification steps that
-must be completed manually.
-
-After `terraform apply`, use SSM to access the center node and cluster services:
-
-```shell
-make shell          # interactive shell on center
-make grafana        # http://127.0.0.1:3000
-make prometheus     # http://127.0.0.1:9090
-make dashboard      # http://127.0.0.1:12379/dashboard
-make mysql          # open a MySQL client through SSM
-make mysql-tunnel   # MySQL on 127.0.0.1:4000
-```
-
-All EC2 instances have private IP addresses only. Session Manager is used for
-interactive access and port forwarding; no inbound connection from the
-internet is required.
-
-Override the default profile or region when needed:
+must be completed manually. If the selected AWS profile uses IAM Identity
+Center, log in with the AWS CLI directly:
 
 ```shell
-make login AWS_PROFILE=my-profile
-make grafana AWS_PROFILE=my-profile AWS_REGION=us-west-2
+aws sso login --profile my-profile
 ```
 
 ## Getting Started
@@ -110,6 +92,27 @@ private-ip-tikv = [
 ]
 ssh-center = "make shell"
 url-grafana = "Run 'make grafana', then open http://127.0.0.1:3000"
+```
+
+#### Access through SSM
+
+Use Session Manager to access the Center instance and private cluster services:
+
+```shell
+make shell          # interactive shell on Center
+make grafana        # http://127.0.0.1:3000
+make prometheus     # http://127.0.0.1:9090
+make dashboard      # http://127.0.0.1:12379/dashboard
+make mysql          # open a MySQL client through SSM
+make mysql-tunnel   # MySQL on 127.0.0.1:4000
+```
+
+All EC2 instances have private IP addresses only. Session Manager provides
+interactive access and port forwarding without inbound internet access. Set a
+non-default profile or region on individual commands when needed:
+
+```shell
+make grafana AWS_PROFILE=my-profile AWS_REGION=us-west-2
 ```
 
 The private subnet uses a NAT gateway for outbound package and TiUP downloads.
