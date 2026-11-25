@@ -35,7 +35,7 @@ must be completed manually. If the selected AWS profile uses IAM Identity
 Center, log in with the AWS CLI directly:
 
 ```shell
-aws sso login --profile my-profile
+aws sso login
 ```
 
 ## Getting Started
